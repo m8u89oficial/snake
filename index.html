@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
-<!-- 🔥 CLAVE PARA EVITAR ZOOM -->
-<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>Snake</title>
 
@@ -36,13 +35,10 @@ body{
 canvas{
   background:#111;
   display:none;
-
-  /* 🔥 ESTO EVITA EL ZOOM Y MUESTRA TODO */
-  width: min(100vw, 100vh);
-  height: min(100vw, 100vh);
-  max-width: 400px;
-  max-height: 400px;
-
+  width:min(100vw,100vh);
+  height:min(100vw,100vh);
+  max-width:400px;
+  max-height:400px;
   touch-action:none;
 }
 </style>
@@ -79,18 +75,23 @@ let lastTime = 0;
 let speed = 120;
 let paused = false;
 let mode = "";
+let gameRunning = false;
 
 // high score
-let highscore = localStorage.getItem("snakeHighScore") || 0;
+let highscore = Number(localStorage.getItem("snakeHighScore")) || 0;
 highscoreEl.textContent = highscore;
 
-function resetGame(){
+function resetGameState(){
   snake = [{x:200,y:200}];
   dx = box;
   dy = 0;
   score = 0;
   scoreEl.textContent = score;
-  food = {
+  food = spawnFood();
+}
+
+function spawnFood(){
+  return {
     x: Math.floor(Math.random()*20)*box,
     y: Math.floor(Math.random()*20)*box
   };
@@ -99,6 +100,8 @@ function resetGame(){
 function startGame(type){
   mode = type;
   paused = false;
+  gameRunning = true;
+  lastTime = 0;
 
   menu.style.display = "none";
   actions.style.display = "block";
@@ -108,17 +111,19 @@ function startGame(type){
     document.documentElement.requestFullscreen?.();
   }
 
-  resetGame();
+  resetGameState();
   requestAnimationFrame(loop);
 }
 
 function togglePause(){
+  if(!gameRunning) return;
   paused = !paused;
 }
 
 /* PC CONTROLS */
 document.addEventListener("keydown", e=>{
-  if(mode!=="pc"||paused) return;
+  if(!gameRunning || paused || mode!=="pc") return;
+
   if(e.key==="ArrowUp" && dy===0){dx=0;dy=-box;}
   if(e.key==="ArrowDown" && dy===0){dx=0;dy=box;}
   if(e.key==="ArrowLeft" && dx===0){dx=-box;dy=0;}
@@ -129,13 +134,13 @@ document.addEventListener("keydown", e=>{
 let sx=0, sy=0;
 
 c.addEventListener("touchstart", e=>{
-  if(mode!=="mobile"||paused) return;
+  if(!gameRunning || paused || mode!=="mobile") return;
   sx=e.touches[0].clientX;
   sy=e.touches[0].clientY;
 });
 
 c.addEventListener("touchend", e=>{
-  if(mode!=="mobile"||paused) return;
+  if(!gameRunning || paused || mode!=="mobile") return;
   const dxT=e.changedTouches[0].clientX-sx;
   const dyT=e.changedTouches[0].clientY-sy;
 
@@ -148,12 +153,15 @@ c.addEventListener("touchend", e=>{
   }
 });
 
-function loop(t){
-  if(!paused && t-lastTime>speed){
+function loop(time){
+  if(!gameRunning) return;
+
+  if(!paused && time-lastTime>speed){
     update();
     draw();
-    lastTime=t;
+    lastTime=time;
   }
+
   requestAnimationFrame(loop);
 }
 
@@ -163,19 +171,14 @@ function update(){
   if(head.x===food.x && head.y===food.y){
     score++;
     scoreEl.textContent=score;
-    food={
-      x:Math.floor(Math.random()*20)*box,
-      y:Math.floor(Math.random()*20)*box
-    };
-  } else snake.pop();
+    food=spawnFood();
+  } else {
+    snake.pop();
+  }
 
   if(head.x<0||head.y<0||head.x>=400||head.y>=400||
      snake.some(s=>s.x===head.x&&s.y===head.y)){
-    alert("Game Over 😢");
-    menu.style.display="block";
-    actions.style.display="none";
-    c.style.display="none";
-    mode="";
+    gameOver();
     return;
   }
 
@@ -189,7 +192,27 @@ function draw(){
   ctx.fillStyle="lime";
   snake.forEach(s=>ctx.fillRect(s.x,s.y,box,box));
 }
+
+function gameOver(){
+  gameRunning = false;
+
+  if(score > highscore){
+    highscore = score;
+    localStorage.setItem("snakeHighScore", highscore);
+    highscoreEl.textContent = highscore;
+    alert("🎉 New High Score!\nScore: " + score);
+  } else {
+    alert("Game Over 😢\nScore: " + score);
+  }
+
+  menu.style.display="block";
+  actions.style.display="none";
+  c.style.display="none";
+  mode="";
+}
 </script>
 
 </body>
 </html>
+
+
