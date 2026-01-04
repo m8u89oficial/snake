@@ -2,6 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
+
+<!-- 🔥 CLAVE PARA EVITAR ZOOM -->
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Snake</title>
 
 <style>
@@ -29,14 +33,16 @@ body{
   margin:10px;
 }
 
-#actions button{
-  font-size:16px;
-  padding:10px 20px;
-}
-
 canvas{
   background:#111;
   display:none;
+
+  /* 🔥 ESTO EVITA EL ZOOM Y MUESTRA TODO */
+  width: min(100vw, 100vh);
+  height: min(100vw, 100vh);
+  max-width: 400px;
+  max-height: 400px;
+
   touch-action:none;
 }
 </style>
@@ -74,27 +80,22 @@ let speed = 120;
 let paused = false;
 let mode = "";
 
-// High score
+// high score
 let highscore = localStorage.getItem("snakeHighScore") || 0;
 highscoreEl.textContent = highscore;
 
-function resetState(){
+function resetGame(){
   snake = [{x:200,y:200}];
   dx = box;
   dy = 0;
   score = 0;
   scoreEl.textContent = score;
-  food = spawnFood();
-}
-
-function spawnFood(){
-  return {
+  food = {
     x: Math.floor(Math.random()*20)*box,
     y: Math.floor(Math.random()*20)*box
   };
 }
 
-/* ---------- START ---------- */
 function startGame(type){
   mode = type;
   paused = false;
@@ -104,51 +105,39 @@ function startGame(type){
   c.style.display = "block";
 
   if(type === "mobile"){
-    enterFullscreen();
-    resizeCanvasMobile();
-  } else {
-    c.style.width = "400px";
-    c.style.height = "400px";
+    document.documentElement.requestFullscreen?.();
   }
 
-  resetState();
+  resetGame();
   requestAnimationFrame(loop);
 }
 
-/* ---------- FULLSCREEN AUTO (MOBILE) ---------- */
-function enterFullscreen(){
-  const el = document.documentElement;
-  if(el.requestFullscreen) el.requestFullscreen();
-}
-
-/* ---------- PAUSE ---------- */
 function togglePause(){
   paused = !paused;
 }
 
-/* ---------- CONTROLS ---------- */
+/* PC CONTROLS */
 document.addEventListener("keydown", e=>{
-  if(mode !== "pc" || paused) return;
-
+  if(mode!=="pc"||paused) return;
   if(e.key==="ArrowUp" && dy===0){dx=0;dy=-box;}
   if(e.key==="ArrowDown" && dy===0){dx=0;dy=box;}
   if(e.key==="ArrowLeft" && dx===0){dx=-box;dy=0;}
   if(e.key==="ArrowRight" && dx===0){dx=box;dy=0;}
 });
 
+/* MOBILE SWIPE */
 let sx=0, sy=0;
 
 c.addEventListener("touchstart", e=>{
   if(mode!=="mobile"||paused) return;
-  sx = e.touches[0].clientX;
-  sy = e.touches[0].clientY;
+  sx=e.touches[0].clientX;
+  sy=e.touches[0].clientY;
 });
 
 c.addEventListener("touchend", e=>{
   if(mode!=="mobile"||paused) return;
-
-  const dxT = e.changedTouches[0].clientX - sx;
-  const dyT = e.changedTouches[0].clientY - sy;
+  const dxT=e.changedTouches[0].clientX-sx;
+  const dyT=e.changedTouches[0].clientY-sy;
 
   if(Math.abs(dxT)>Math.abs(dyT)){
     if(dxT>30 && dx===0){dx=box;dy=0;}
@@ -159,36 +148,34 @@ c.addEventListener("touchend", e=>{
   }
 });
 
-/* ---------- LOOP OPTIMIZADO ---------- */
-function loop(time){
-  if(paused){
-    requestAnimationFrame(loop);
-    return;
-  }
-
-  if(time - lastTime > speed){
+function loop(t){
+  if(!paused && t-lastTime>speed){
     update();
     draw();
-    lastTime = time;
+    lastTime=t;
   }
-
   requestAnimationFrame(loop);
 }
 
 function update(){
-  const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+  const head={x:snake[0].x+dx,y:snake[0].y+dy};
 
   if(head.x===food.x && head.y===food.y){
     score++;
-    scoreEl.textContent = score;
-    food = spawnFood();
-  } else {
-    snake.pop();
-  }
+    scoreEl.textContent=score;
+    food={
+      x:Math.floor(Math.random()*20)*box,
+      y:Math.floor(Math.random()*20)*box
+    };
+  } else snake.pop();
 
   if(head.x<0||head.y<0||head.x>=400||head.y>=400||
      snake.some(s=>s.x===head.x&&s.y===head.y)){
-    gameOver();
+    alert("Game Over 😢");
+    menu.style.display="block";
+    actions.style.display="none";
+    c.style.display="none";
+    mode="";
     return;
   }
 
@@ -201,29 +188,6 @@ function draw(){
   ctx.fillRect(food.x,food.y,box,box);
   ctx.fillStyle="lime";
   snake.forEach(s=>ctx.fillRect(s.x,s.y,box,box));
-}
-
-function gameOver(){
-  alert("Game Over 😢\nApples eaten: " + score);
-
-  if(score>highscore){
-    highscore=score;
-    localStorage.setItem("snakeHighScore",highscore);
-    highscoreEl.textContent=highscore;
-    alert("🎉 New High Score!");
-  }
-
-  menu.style.display="block";
-  actions.style.display="none";
-  c.style.display="none";
-  mode="";
-}
-
-/* ---------- MOBILE SIZE ---------- */
-function resizeCanvasMobile(){
-  const size = Math.min(innerWidth, innerHeight);
-  c.style.width = size+"px";
-  c.style.height = size+"px";
 }
 </script>
 
