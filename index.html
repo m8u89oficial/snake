@@ -4,39 +4,6 @@
 <meta charset="UTF-8">
 <title>Snake</title>
 </head>
-<body style="background:black; text-align:center;">
-
-<canvas id="c" width="400" height="400" style="background:#111"></canvas>
-
-<script>
-const c = document.getElementById("c");
-const ctx = c.getContext("2d");
-
-let box = 20;
-let snake = [{x:200,y:200}];
-let dx = box;
-let dy = 0;
-let food = {
-  x: Math.floor(Math.random()*20)*box,
-  y: Math.floor(Math.random()*20)*box
-};
-
-document.addEventListener("keydown", e=>{
-  if(e.key=="ArrowUp" && dy==0){dx=0;dy=-box;}
-  if(e.key=="ArrowDown" && dy==0){dx=0;dy=box;}
-  if(e.key=="ArrowLeft" && dx==0){dx=-box;dy=0;}
-  if(e.key=="ArrowRight" && dx==0){dx=box;dy=0;}
-});
-
-function game(){
-  ctx.clearRect(0,0,400,400);
-
- <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Snake</title>
-</head>
 <body style="background:black; text-align:center; color:white; font-family:Arial;">
 
 <h2>🍎 Manzanas: <span id="score">0</span></h2>
@@ -124,4 +91,3 @@ setInterval(game,150);
 
 </body>
 </html>
-
